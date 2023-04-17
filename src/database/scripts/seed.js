@@ -34,7 +34,7 @@ for (let i = 0; i < numberOfRecords; i++) {
   data.push(record);
 }
 
-const query = `INSERT INTO tabble.report (
+const query = `INSERT INTO gvl328_table.report (
   driver_name,
   trailer,
   driver_passport,
