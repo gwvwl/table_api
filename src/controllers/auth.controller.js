@@ -6,21 +6,17 @@ const {
 const { generate: generateToken } = require("../utils/token");
 
 exports.signup = (req, res) => {
-  const { firstname, lastname, email, password } = req.body;
+  console.log(req.body);
+  const { login, password } = req.body;
 
   const hashedPassword = hashPassword(password.trim());
 
-  const user = new User(
-    firstname.trim(),
-    lastname.trim(),
-    email.trim(),
-    hashedPassword
-  );
+  const user = new User(login.trim(), hashedPassword);
 
   User.create(user, (err, data) => {
     if (err) {
       res.status(500).send({
-        status: "error hui",
+        status: "error",
         message: err.message,
       });
     } else {
@@ -37,13 +33,14 @@ exports.signup = (req, res) => {
 };
 
 exports.signin = (req, res) => {
-  const { email, password } = req.body;
-  User.findByEmail(email.trim(), (err, data) => {
+  const { login, password } = req.body;
+
+  User.findByLogin(login.trim(), (err, data) => {
     if (err) {
       if (err.kind === "not_found") {
         res.status(404).send({
           status: "error",
-          message: `User with email ${email} was not found`,
+          message: `User with email ${login} was not found`,
         });
         return;
       }
@@ -59,10 +56,9 @@ exports.signin = (req, res) => {
         res.status(200).send({
           status: "success",
           data: {
+            user: data.login,
+            admin: data.admin === "1" ? true : false,
             token,
-            firstname: data.firstname,
-            lastname: data.lastname,
-            email: data.email,
           },
         });
         return;

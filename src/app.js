@@ -5,7 +5,7 @@ const fileUpload = require("express-fileupload");
 
 const authRoute = require("./routes/auth.route");
 const tokenRoute = require("./routes/token.route");
-const usersRoute = require("./routes/users.route");
+const reportRoute = require("./routes/report.route");
 
 const { httpLogStream } = require("./utils/logger");
 
@@ -22,11 +22,9 @@ app.use(
   })
 );
 
-app.use(express.static(__dirname + "/upload"));
-
-app.use("/api/auth", authRoute);
+app.use("/", authRoute);
 app.use("/api", tokenRoute);
-app.use("/api", usersRoute);
+app.use("/", reportRoute);
 
 app.get("/", (req, res) => {
   res.status(200).send({

@@ -1,6 +1,6 @@
 const router = require("express").Router();
 const { asyncHandler } = require("../middlewares/asyncHandler");
-const checkEmail = require("../middlewares/checkEmail");
+const checkLogin = require("../middlewares/checkLogin");
 const {
   signup: signupValidator,
   signin: signinValidator,
@@ -11,7 +11,7 @@ router
   .route("/signup")
   .post(
     signupValidator,
-    asyncHandler(checkEmail),
+    asyncHandler(checkLogin),
     asyncHandler(authController.signup)
   );
 

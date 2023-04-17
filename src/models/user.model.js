@@ -1,30 +1,21 @@
 const db = require("../config/db.config");
 const {
   createNewUser: createNewUserQuery,
-  findUserByEmail: findUserByEmailQuery,
+  findUserByLogin: findUserByLoginQuery,
   countBase,
 } = require("../database/queries");
 const { logger } = require("../utils/logger");
 
 class User {
-  constructor(name, email, phone, position, photo) {
-    this.name = name;
-    this.phone = phone;
-    this.email = email;
-    this.position = position;
-    this.photo = photo;
+  constructor(login, password) {
+    this.login = login;
+    this.password = password;
   }
 
   static create(newUser, cb) {
     db.query(
       createNewUserQuery,
-      [
-        newUser.name,
-        newUser.phone,
-        newUser.email,
-        newUser.position,
-        newUser.photo,
-      ],
+      [newUser.login, newUser.password],
       (err, res) => {
         if (err) {
           logger.error(err.message);
@@ -33,18 +24,15 @@ class User {
         }
         cb(null, {
           id: res.insertId,
-          name: newUser.name,
-          phone: newUser.phone,
-          email: newUser.email,
-          position: newUser.position,
-          photo: newUser.photo,
+          login: newUser.login,
+          password: newUser.password,
         });
       }
     );
   }
 
-  static findByEmail(email, cb) {
-    db.query(findUserByEmailQuery, email, (err, res) => {
+  static findByLogin(login, cb) {
+    db.query(findUserByLoginQuery, login, (err, res) => {
       if (err) {
         logger.error(err.message);
         cb(err, null);

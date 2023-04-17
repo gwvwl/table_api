@@ -1,5 +1,4 @@
 const Joi = require("joi");
-const validatorHandler = require("../middlewares/validatorHandler");
 
 const signup = (req, res, next) => {
   const schema = Joi.object().keys({

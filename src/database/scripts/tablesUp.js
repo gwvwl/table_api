@@ -1,13 +1,22 @@
-const { logger } = require('../../utils/logger');
-const { createTableUSers: createTableUSersQuery } = require('../queries');
+const { logger } = require("../../utils/logger");
+const { createTableReport, createTableUser } = require("../queries");
 
-(() => {    
-   require('../../config/db.config').query(createTableUSersQuery, (err, _) => {
-        if (err) {
-            logger.error(err.message);
-            return;
-        }
-        logger.info('Table users created!');
-        process.exit(0);
-    });
+(() => {
+  const db = require("../../config/db.config");
+  db.query(createTableReport, (err, _) => {
+    if (err) {
+      logger.error(err.message);
+      return;
+    }
+    logger.info("Tables report created!");
+  });
+
+  db.query(createTableUser, (err, _) => {
+    if (err) {
+      logger.error(err.message);
+      return;
+    }
+    logger.info("Tables user created!");
+    process.exit(0);
+  });
 })();
