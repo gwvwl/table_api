@@ -1,15 +1,20 @@
-const mysql = require('mysql');
+const { Sequelize } = require('sequelize');
 const { logger } = require('../utils/logger');
-const { DB_HOST, DB_USER, DB_PASS } = require('../utils/secrets');
+const { DB_HOST, DB_USER, DB_PASS, DB_NAME } = require('../utils/secrets');
 
-const connection = mysql.createConnection({
+const sequelize = new Sequelize(DB_NAME, DB_USER, DB_PASS, {
     host: DB_HOST,
-    user: DB_USER,
-    password: DB_PASS
+    dialect: 'mysql',
+    logging: false,
 });
 
-connection.connect((err) => {
-    if (err) logger.error(err.message);
-});
+sequelize
+    .authenticate()
+    .then(() => {
+        logger.info('Connection has been established successfully.');
+    })
+    .catch((err) => {
+        logger.error('Unable to connect to the database:', err);
+    });
 
-module.exports = connection;
+module.exports = sequelize;

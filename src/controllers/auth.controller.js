@@ -1,72 +1,70 @@
-const User = require("../models/user.model");
-const {
-  hash: hashPassword,
-  compare: comparePassword,
-} = require("../utils/password");
-const { generate: generateToken } = require("../utils/token");
+const Auth = require('../models/auth.model');
+const { generateTokens, saveToken, removeToken, refresh: refreshTokens } = require('../utils/token');
 
-exports.signup = (req, res) => {
-  console.log(req.body);
-  const { login, password } = req.body;
+exports.signin = async (req, res) => {
+    const { login, password } = req.body;
 
-  const hashedPassword = hashPassword(password.trim());
+    const auth_user = await Auth.authenticateUser({ login, password });
 
-  const user = new User(login.trim(), hashedPassword);
+    if (auth_user) {
+        const permissions = auth_user.Permissions.map(({ name }) => name);
 
-  User.create(user, (err, data) => {
-    if (err) {
-      res.status(500).send({
-        status: "error",
-        message: err.message,
-      });
-    } else {
-      const token = generateToken(data.id);
-      res.status(201).send({
-        status: "success",
-        data: {
-          token,
-          data,
-        },
-      });
+        const tokens = generateTokens({
+            id: auth_user.id,
+            permissions: permissions,
+            type: auth_user.type,
+        });
+
+        await saveToken(auth_user.id, tokens.refresh);
+
+        res.cookie('refreshToken', tokens.refresh, {
+            maxAge: 30 * 24 * 60 * 60 * 1000,
+            httpOnly: true,
+        });
+
+        res.status(200).send({
+            status: true,
+            access: tokens.access,
+            data: {
+                id: auth_user.id,
+                name: auth_user.name,
+                login: auth_user.login,
+                type: auth_user.type,
+            },
+        });
+        return;
     }
-  });
+    res.status(401).send({
+        status: 'error',
+        message: 'Incorrect password',
+    });
 };
 
-exports.signin = (req, res) => {
-  const { login, password } = req.body;
+exports.logout = async (req, res, next) => {
+    const { refreshToken } = req.cookies;
+    const token = await removeToken(refreshToken);
 
-  User.findByLogin(login.trim(), (err, data) => {
-    if (err) {
-      if (err.kind === "not_found") {
-        res.status(404).send({
-          status: "error",
-          message: `User with email ${login} was not found`,
-        });
-        return;
-      }
-      res.status(500).send({
-        status: "error",
-        message: err.message,
-      });
-      return;
-    }
-    if (data) {
-      if (comparePassword(password.trim(), data.password)) {
-        const token = generateToken(data.id);
-        res.status(200).send({
-          status: "success",
-          data: {
-            user: data.login,
-            admin: data.admin === "1" ? true : false,
-            token,
-          },
-        });
-        return;
-      }
-      res.status(401).send({
-        status: "error",
-        message: "Incorrect password",
-      });
-    }
-  });
+    res.clearCookie('refreshToken');
+    return res.json(token);
+};
+
+exports.refresh = async (req, res, next) => {
+    const { refreshToken } = req.cookies;
+    const userData = await refreshTokens(refreshToken);
+
+    res.cookie('refreshToken', userData.refresh, {
+        maxAge: 30 * 24 * 60 * 60 * 1000,
+        httpOnly: true,
+    });
+    await saveToken(userData.user.id, userData.refresh);
+    res.status(200).send({
+        status: true,
+        acsses: userData.access,
+        data: {
+            id: userData.user.id,
+            name: userData.user.name,
+            login: userData.user.login,
+            type: userData.user.type,
+        },
+    });
 };
