@@ -20,7 +20,8 @@ async function createTestData() {
             category.push(name);
         }
         category.forEach(async (i) => {
-            await CategoryModel.createCategory(i);
+            const img_path = faker.image.url();
+            await CategoryModel.createCategory(i, img_path);
         });
         // Создание stock
         const stock = [];
@@ -44,7 +45,8 @@ async function createTestData() {
         }
         additions.forEach(async (name) => {
             const price = faker.commerce.price();
-            const addition = await AdditionModel.createAddition(name, price);
+            const img_path = faker.image.url();
+            const addition = await AdditionModel.createAddition(name, price, img_path);
             const randomStock = _.sample(stock);
             await AdditionModel.addStockToAddition(addition.id, randomStock);
         });
@@ -55,16 +57,17 @@ async function createTestData() {
         for (let i = 0; i < 50; i++) {
             const name = faker.commerce.productName();
             const description = faker.lorem.sentence();
-            products.push({ name, description });
+            const img_path = faker.image.url();
+            products.push({ name, description, img_path });
         }
 
-        products.forEach(async ({ name, description }) => {
+        products.forEach(async ({ name, description, img_path }) => {
             const randomStock = _.sampleSize(stock, 3);
             const randomAdditions = _.sampleSize(additions, 3);
             const randomCategory = _.sample(category);
             amount.forEach(async (amount) => {
                 const price = faker.commerce.price();
-                const product = await ProductModel.createProduct(name, amount, price, description);
+                const product = await ProductModel.createProduct(name, amount, price, description, img_path);
                 await ProductModel.addStockToProduct(product.id, randomStock);
                 await ProductModel.addAdditionToProduct(product.id, randomAdditions);
                 await ProductModel.addCategoryToProduct(product.id, randomCategory);

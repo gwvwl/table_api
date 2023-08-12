@@ -28,10 +28,19 @@ const admin = {
     password: ADMIN_PASS,
     permission: defoultPermissionAdmin,
 };
+const worker = {
+    name: 'Valera',
+    login: 'worker',
+    type: 'worker',
+    role: 'worker',
+    password: ADMIN_PASS,
+    permission: defoultPermissionAdmin,
+};
 
 async function start() {
     await PermissionModel.createPermission(defoultPermissionAdmin);
     const userNew = await UserModel.createAdmin(admin);
+    const work = await UserModel.createUser(worker);
     const data = await UserModel.getUserById(userNew.id);
     console.log(data.toJSON());
 
