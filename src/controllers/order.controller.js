@@ -1,10 +1,12 @@
 const OrderModel = require('../models/order.model');
-const ProductModel = require('../models/product.model');
-const AdittionModel = require('../models/addition.model');
+
 const { decodeAccsess } = require('../utils/token');
 exports.createOrder = async (req, res) => {
-    const { data, totalPrice } = req.body;
+    const { data, payment } = req.body;
 
+    if (data.length === 0) {
+        return res.status(404).send({ success: false, message: 'Not found order data' });
+    }
     const authHeader = req.headers['authorization'];
     // get user_id from token if not exist pass false
     const token = (authHeader && authHeader.split(' ')[1]) || authHeader;
@@ -14,10 +16,10 @@ exports.createOrder = async (req, res) => {
     const order = await OrderModel.createOrderWithProductsAndAdditions({
         data,
         user_id,
-        totalPrice,
+        payment,
     });
 
-    res.status(201).send({ success: true, message: 'Order created', order });
+    res.status(200).send({ success: true, message: 'Order created', order });
 };
 
 exports.getOrders = async (req, res) => {

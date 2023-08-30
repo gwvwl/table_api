@@ -1,5 +1,6 @@
 const { OrderDB, ProductDB, AdditionDB, ProductInOrderDB } = require('../database/modelDB');
 const { logger } = require('../utils/logger');
+const { Sequelize } = require('sequelize');
 
 class OrderModel {
     static async getOrderById(id) {
@@ -68,33 +69,47 @@ class OrderModel {
 
     static async getAllOrdersForWorker() {
         try {
-            const orders = await OrderDB.findAll({
+            const allOrders = await OrderDB.findAll({
+                where: {
+                    status: {
+                        [Sequelize.Op.not]: ['done', 'cancel'],
+                    },
+                },
                 include: [
                     {
                         model: ProductDB,
-                        through: { attributes: [] },
-                    },
-                    {
-                        model: AdditionDB,
-                        through: { attributes: [] },
+                        through: {
+                            model: ProductInOrderDB,
+                        },
                     },
                 ],
-                where: {
-                    status: 'pending',
-                },
             });
-            return orders;
+
+            for (const order of allOrders) {
+                for (const product of order.Products) {
+                    const productInOrder = product.ProoductsOrder;
+                    const additions = await productInOrder.getAdditions();
+
+                    const cleanedAdditions = additions.map((addition) => {
+                        const { additions_in_product_in_order, ...rest } = addition.toJSON();
+                        return rest;
+                    });
+                    product.setDataValue('Additions', cleanedAdditions);
+                }
+            }
+
+            return allOrders;
         } catch (error) {
             logger.error('Error getting all orders:', error);
             throw error;
         }
     }
 
-    static async createOrderWithProductsAndAdditions({ data, user_id, comment }) {
+    static async createOrderWithProductsAndAdditions({ data, user_id, comment, payment }) {
         try {
             const order = await OrderDB.create({
                 status: 'pending',
-                payment: 'unpaid',
+                payment: payment || 'unpaid',
                 comment: comment || null,
                 user_id: user_id || null,
                 totalPrice: null,

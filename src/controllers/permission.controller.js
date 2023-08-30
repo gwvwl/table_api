@@ -27,6 +27,7 @@ exports.addPermission = async (req, res) => {
     res.status(200).send({
         success: true,
         message: `Permission '${permission.name}' granted to user `,
+        user_type: permission.type,
     });
 };
 
@@ -38,5 +39,6 @@ exports.removePermission = async (req, res) => {
     res.status(200).send({
         success: true,
         message: `Permission '${permission.name}' revoked from user'`,
+        user_type: permission.type,
     });
 };
