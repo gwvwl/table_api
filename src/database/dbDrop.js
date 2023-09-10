@@ -6,10 +6,10 @@ const { DB_NAME } = require('../utils/secrets');
 (async () => {
     try {
         // for (const modelName in models) {
-        //     await models[modelName].destroy({ where: {} });
+        await models.OrderDB.destroy({ where: {} });
         // }
         // await models.OrderDB.destroy({ where: {} });
-        await sequelize.query(`DROP DATABASE IF EXISTS ${DB_NAME}`);
+        // await sequelize.query(`DROP DATABASE IF EXISTS ${DB_NAME}`);
         logger.info('All tables cleared!');
     } catch (error) {
         logger.error(error.message);

@@ -7,6 +7,11 @@ const accessTypeAdmin = 'read_all_order';
 const accessTypeWorker = 'read_order_not_done';
 
 router.route('/order').post(asyncHandler(orderController.createOrder));
+// real time
+router.route('/connect_order_user/:id').get(asyncHandler(orderController.connectOrderUser));
+router
+    .route('/connect_order_worker')
+    .get(validatePermissionAndToken(accessTypeWorker), asyncHandler(orderController.connectOrderWorker));
 
 // for worker
 router

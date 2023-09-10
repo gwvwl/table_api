@@ -1,8 +1,10 @@
 const OrderModel = require('../models/order.model');
+const events = require('events');
+const emitter = new events.EventEmitter();
 
 const { decodeAccsess } = require('../utils/token');
 exports.createOrder = async (req, res) => {
-    const { data, payment } = req.body;
+    const { data, payment, comment } = req.body;
 
     if (data.length === 0) {
         return res.status(404).send({ success: false, message: 'Not found order data' });
@@ -16,10 +18,36 @@ exports.createOrder = async (req, res) => {
     const order = await OrderModel.createOrderWithProductsAndAdditions({
         data,
         user_id,
+        comment,
         payment,
     });
+    emitter.emit(`subsOrderWorker`, order);
 
     res.status(200).send({ success: true, message: 'Order created', order });
+};
+
+exports.connectOrderUser = (req, res) => {
+    const { id } = req.params;
+
+    res.writeHead(200, {
+        Connection: 'keep-alive',
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+    });
+    emitter.on(`subsOrder/${id}`, (order) => {
+        res.write(`data: ${JSON.stringify(order)} \n\n`);
+    });
+};
+exports.connectOrderWorker = (req, res) => {
+    res.writeHead(200, {
+        Connection: 'keep-alive',
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+    });
+
+    emitter.on(`subsOrderWorker`, (order) => {
+        res.write(`data: ${JSON.stringify(order)} \n\n`);
+    });
 };
 
 exports.getOrders = async (req, res) => {
@@ -60,6 +88,7 @@ exports.updateStatus = async (req, res) => {
     order.updatedBy = user_id;
 
     await order.save();
+    emitter.emit(`subsOrder/${order.id}`, order);
 
     res.status(200).send({ success: true, message: 'Order status updated', order });
 };

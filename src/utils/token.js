@@ -68,8 +68,8 @@ const findToken = async (refreshToken) => {
 const refresh = async (refreshToken) => {
     const userData = decodeRefresh(refreshToken);
 
-    const tokenFromDb = await findToken(refreshToken);
-    if (!userData || !tokenFromDb) {
+    // const tokenFromDb = await findToken(refreshToken);
+    if (!userData) {
         throw logger.error('userData and tokenFromDb not exist');
     }
     const user = await UserModel.getUserById(userData.id);

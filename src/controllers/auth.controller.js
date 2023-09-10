@@ -50,21 +50,28 @@ exports.logout = async (req, res, next) => {
 
 exports.refresh = async (req, res, next) => {
     const { refreshToken } = req.cookies;
-    const userData = await refreshTokens(refreshToken);
 
-    res.cookie('refreshToken', userData.refresh, {
-        maxAge: 30 * 24 * 60 * 60 * 1000,
-        httpOnly: true,
-    });
-    await saveToken(userData.user.id, userData.refresh);
-    res.status(200).send({
-        status: true,
-        acsses: userData.access,
-        data: {
-            id: userData.user.id,
-            name: userData.user.name,
-            login: userData.user.login,
-            type: userData.user.type,
-        },
-    });
+    try {
+        const userData = await refreshTokens(refreshToken);
+        res.cookie('refreshToken', userData.refresh, {
+            maxAge: 30 * 24 * 60 * 60 * 1000,
+            httpOnly: true,
+        });
+        await saveToken(userData.user.id, userData.refresh);
+        res.status(200).send({
+            status: true,
+            acsses: userData.access,
+            data: {
+                id: userData.user.id,
+                name: userData.user.name,
+                login: userData.user.login,
+                type: userData.user.type,
+            },
+        });
+    } catch {
+        res.status(509).send({
+            status: 'error',
+            message: 'refresh token failed',
+        });
+    }
 };
