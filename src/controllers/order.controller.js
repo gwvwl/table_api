@@ -1,154 +1,124 @@
-const OrderModel = require('../models/order.model');
-const events = require('events');
-const emitter = new events.EventEmitter();
-
-const { decodeAccsess } = require('../utils/token');
+const OrderModel = require("../models/order.model");
+const { Op } = require("sequelize");
 exports.createOrder = async (req, res) => {
-    const { data, payment, comment } = req.body;
+  const { type, phone, name, date, customs, details } = req.body;
 
-    if (data.length === 0) {
-        return res.status(404).send({ success: false, message: 'Not found order data' });
-    }
-    const authHeader = req.headers['authorization'];
-    // get user_id from token if not exist pass false
-    const token = (authHeader && authHeader.split(' ')[1]) || authHeader;
-    const verifyToken = token && decodeAccsess(token);
-    const user_id = verifyToken ? verifyToken.id : null;
-
-    const order = await OrderModel.createOrderWithProductsAndAdditions({
-        data,
-        user_id,
-        comment,
-        payment,
+  try {
+    const order = await OrderModel.createAddition({
+      type,
+      phone,
+      name,
+      date,
+      customs,
+      details,
     });
-    emitter.emit(`subsOrderWorker`, order);
 
-    res.status(200).send({ success: true, message: 'Order created', order });
+    res
+      .status(200)
+      .json({ success: true, message: "OrderModel created", order });
+  } catch (error) {
+    console.error("Error creating OrderModel:", error);
+    res
+      .status(500)
+      .json({ success: false, message: "Failed to create OrderModel" });
+  }
 };
+exports.getOrder = async (req, res) => {
+  const { id, offset = 0, limit = 25, date_between } = req.query;
 
-exports.connectOrderUser = (req, res) => {
-    const { id } = req.params;
-
-    res.writeHead(200, {
-        Connection: 'keep-alive',
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-    });
-    emitter.on(`subsOrder/${id}`, (order) => {
-        res.write(`data: ${JSON.stringify(order)} \n\n`);
-    });
-};
-exports.connectOrderWorker = (req, res) => {
-    res.writeHead(200, {
-        Connection: 'keep-alive',
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-    });
-
-    emitter.on(`subsOrderWorker`, (order) => {
-        res.write(`data: ${JSON.stringify(order)} \n\n`);
-    });
-};
-
-exports.getOrders = async (req, res) => {
-    const { id } = req.query;
-
+  try {
     let orders;
 
     if (id) {
-        const order = await OrderModel.getOrderById(id);
-        if (!order) {
-            return res.status(404).json({ success: false, message: 'Order not found' });
-        }
-        orders = [order];
+      const order = await OrderModel.getOrderById(id);
+      if (!order) {
+        return res
+          .status(404)
+          .send({ success: false, message: "Order not found" });
+      }
+      orders = [order];
     } else {
-        orders = await OrderModel.getAllOrders();
+      let dateFilter = {};
+
+      if (date_between) {
+        const [startDate, endDate] = date_between.split(",");
+        dateFilter = {
+          date: {
+            [Op.between]: [new Date(startDate), new Date(endDate)],
+          },
+        };
+      }
+
+      orders = await OrderModel.getAllOrders({
+        offset: parseInt(offset, 10),
+        limit: parseInt(limit, 10),
+        dateFilter,
+      });
     }
 
-    res.status(200).json({ success: true, message: 'Orders retrieved', orders });
-};
-exports.getOrdersForWorker = async (req, res) => {
-    const orders = await OrderModel.getAllOrdersForWorker();
-
-    res.status(200).json({ success: true, message: 'Orders retrieved', orders });
-};
-
-exports.updateStatus = async (req, res) => {
-    const { order_id } = req.params;
-    const { status } = req.body;
-    const user_id = req.user.id;
-
-    const order = await OrderModel.getOrderById(order_id);
-
-    if (!order) {
-        return res.status(404).send({ success: false, message: 'Order not found' });
-    }
-
-    order.status = status;
-    order.updatedBy = user_id;
-
-    await order.save();
-    emitter.emit(`subsOrder/${order.id}`, order);
-
-    res.status(200).send({ success: true, message: 'Order status updated', order });
+    res
+      .status(200)
+      .send({ success: true, data: orders.orders, total: orders.total });
+  } catch (error) {
+    console.error("Ошибка при получении заказов:", error);
+    res.status(500).send({ success: false, message: "Internal Server Error" });
+  }
 };
 
-exports.updatePayment = async (req, res) => {
-    const { order_id } = req.params;
-    const { payment } = req.body;
-    const user_id = req.user.id;
+exports.deleteOrder = async (req, res) => {
+  const { id } = req.params;
 
-    const order = await OrderModel.getOrderById(order_id);
+  const order = await OrderModel.getOrderById(id);
 
-    if (!order) {
-        return res.status(404).json({ success: false, message: 'Order not found' });
-    }
+  if (!order) {
+    return res.status(404).json({ success: false, message: "order not found" });
+  }
 
-    order.payment = payment;
-    order.updatedBy = user_id;
+  await order.destroy();
 
-    await order.save();
-
-    res.status(200).send({
-        success: true,
-        message: 'Order payment status updated',
-        order: order,
-    });
+  res.status(200).send({ success: true, message: "order deleted" });
 };
 
-exports.updateOrdeAllInput = async (req, res) => {
-    const { order_id } = req.params;
-    const { status, payment, comment } = req.body;
+// exports.getOrder = async (req, res) => {
+//   const { id } = req.query;
 
-    const order = await OrderModel.getOrderById(order_id);
+//   let additions;
 
-    if (!order) {
-        return res.status(404).send({ success: false, message: 'Order not found' });
-    }
+//   if (id) {
+//     const addition = await OrderModel.getAdditionById(id);
+//     if (!addition) {
+//       return res
+//         .status(404)
+//         .send({ success: false, message: "OrderModel not found" });
+//     }
+//     additions = [addition];
+//   } else {
+//     additions = await OrderModel.getAllAdditions();
+//   }
 
-    // Обновление полей `order`
-    order.status = status || order.status;
-    order.payment = payment || order.payment;
-    order.comment = comment || order.comment;
+//   res.status(200).send({ success: true, data: additions });
+// };
 
-    await order.save();
+// exports.updateOrder= async (req, res) => {
+//     const { id } = req.params;
+//     const { name, price, stock } = req.body;
+//     //  img
+//     const file = req?.files?.img;
 
-    res.status(200).send({ success: true, message: 'Order updated', order });
-};
+//     const id_img_and_format = Date.now() + '.' + file?.name.split('.').pop();
+//     file?.mv(__dirname + '/../upload/' + id_img_and_format);
+//     const img_path = file ? 'http://localhost:8080/' + id_img_and_format : '';
+//     const addition = await AdditionModel.getAdditionById(id);
 
-exports.deleteAdditionFromProductOrder = async (req, res) => {
-    const { order_id } = req.params;
-    const { product_id, addition_id } = req.query;
-    const order = await OrderModel.removeAdditionFromOrder(order_id, product_id, addition_id);
+//     if (!addition) {
+//         return res.status(404).send({ success: false, message: 'Addition not found or name' });
+//     }
 
-    res.status(200).json({ success: true, message: 'Addition delete from Order', order });
-};
-
-exports.deleteProductFromOrder = async (req, res) => {
-    const { order_id } = req.params;
-    const { product_id } = req.query;
-
-    const order = await OrderModel.decreaseProductCountInOrder(order_id, product_id);
-
-    res.status(200).json({ success: true, message: 'Product delete from Order', order });
-};
+//     addition.name = name || addition.name;
+//     addition.price = price || addition.price;
+//     addition.img_path = img_path || addition.img_path;
+//     // stock
+//     if (stock) await AdditionModel.addStockToAddition(id, stock);
+//     await addition.save();
+//     res.status(200).send({ success: true, message: 'Addition updated', addition });
+// };

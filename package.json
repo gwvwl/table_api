@@ -13,7 +13,7 @@
     "db:update": "node src/database/dbUpdateTable.js",
     "db:test": "node src/database/test.js",
     "db:init": "npm run db:up && npm run db:table",
-    "seed": "node src/database/seedDB.js",
+    "seed": "node src/database/seed.js",
     "seedUser": "node src/database/seedUsers.js",
     "format": "prettier --write \"src/**/*.js\" \"src/**/*.jsx\" \"src/**/*.ts\" \"src/**/*.tsx\""
   },
