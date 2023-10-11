@@ -1,7 +1,7 @@
 const OrderModel = require("../models/order.model");
 const { Op } = require("sequelize");
 exports.createOrder = async (req, res) => {
-  const { type, phone, name, date, customs, details } = req.body;
+  const { type, phone, name, date, customs, details, agencyTitle } = req.body;
 
   try {
     const order = await OrderModel.createAddition({
@@ -11,6 +11,7 @@ exports.createOrder = async (req, res) => {
       date,
       customs,
       details,
+      agencyTitle,
     });
 
     res
@@ -99,26 +100,22 @@ exports.deleteOrder = async (req, res) => {
 //   res.status(200).send({ success: true, data: additions });
 // };
 
-// exports.updateOrder= async (req, res) => {
-//     const { id } = req.params;
-//     const { name, price, stock } = req.body;
-//     //  img
-//     const file = req?.files?.img;
+exports.updateOrder = async (req, res) => {
+  const { id } = req.params;
+  const { details, customs, date } = req.body;
 
-//     const id_img_and_format = Date.now() + '.' + file?.name.split('.').pop();
-//     file?.mv(__dirname + '/../upload/' + id_img_and_format);
-//     const img_path = file ? 'http://localhost:8080/' + id_img_and_format : '';
-//     const addition = await AdditionModel.getAdditionById(id);
+  const order = await OrderModel.getOrderById(id);
 
-//     if (!addition) {
-//         return res.status(404).send({ success: false, message: 'Addition not found or name' });
-//     }
+  if (!order) {
+    return res
+      .status(404)
+      .send({ success: false, message: "Order not found " });
+  }
 
-//     addition.name = name || addition.name;
-//     addition.price = price || addition.price;
-//     addition.img_path = img_path || addition.img_path;
-//     // stock
-//     if (stock) await AdditionModel.addStockToAddition(id, stock);
-//     await addition.save();
-//     res.status(200).send({ success: true, message: 'Addition updated', addition });
-// };
+  order.details = details || order.details;
+  order.customs = customs || order.customs;
+  order.date = date || order.date;
+
+  await order.save();
+  res.status(200).send({ success: true, message: "order updated", order });
+};

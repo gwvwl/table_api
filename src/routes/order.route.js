@@ -13,5 +13,6 @@ router
   .delete(
     asyncHandler(validateToken),
     asyncHandler(OrderController.deleteOrder)
-  );
+  )
+  .put(asyncHandler(validateToken), asyncHandler(OrderController.updateOrder));
 module.exports = router;

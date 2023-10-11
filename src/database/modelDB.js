@@ -12,6 +12,7 @@ const UserDB = sequelize.define("User", {
     type: DataTypes.STRING,
     unique: true,
   },
+  type: DataTypes.STRING,
   password: DataTypes.STRING,
 });
 
@@ -27,6 +28,7 @@ const OrderDB = sequelize.define("Addition", {
   date: DataTypes.DATE,
   customs: DataTypes.INTEGER,
   details: DataTypes.STRING,
+  agencyTitle: DataTypes.STRING,
 });
 
 // Синхронизация моделей с базой данных

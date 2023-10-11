@@ -22,6 +22,7 @@ exports.signin = async (req, res) => {
       data: {
         id: auth_user.id,
         login: auth_user.login,
+        type: auth_user.type,
       },
     });
     return;

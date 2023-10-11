@@ -1,7 +1,15 @@
 const { OrderDB } = require("../database/modelDB");
 const { logger } = require("../utils/logger");
 class AdditionModel {
-  static async createAddition({ type, phone, name, date, customs, details }) {
+  static async createAddition({
+    type,
+    phone,
+    name,
+    date,
+    customs,
+    details,
+    agencyTitle,
+  }) {
     try {
       const order = await OrderDB.create({
         type,
@@ -10,6 +18,7 @@ class AdditionModel {
         date,
         customs,
         details,
+        agencyTitle,
       });
 
       return order;

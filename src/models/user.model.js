@@ -24,10 +24,11 @@ class UserModel {
     }
   }
 
-  static async createUser({ login, password }) {
+  static async createUser({ login, password, type }) {
     try {
       const user = await UserDB.create({
         login,
+        type,
         password: hashPassword(password),
       });
 
