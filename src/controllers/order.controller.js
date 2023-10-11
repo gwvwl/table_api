@@ -1,5 +1,7 @@
 const OrderModel = require("../models/order.model");
 const { Op } = require("sequelize");
+const events = require("events");
+const emitter = new events.EventEmitter();
 exports.createOrder = async (req, res) => {
   const { type, phone, name, date, customs, details, agencyTitle } = req.body;
 
@@ -13,7 +15,7 @@ exports.createOrder = async (req, res) => {
       details,
       agencyTitle,
     });
-
+    emitter.emit(`subsOrderWorker`, order);
     res
       .status(200)
       .json({ success: true, message: "OrderModel created", order });
@@ -118,4 +120,16 @@ exports.updateOrder = async (req, res) => {
 
   await order.save();
   res.status(200).send({ success: true, message: "order updated", order });
+};
+
+exports.connectOrderWorker = (req, res) => {
+  res.writeHead(200, {
+    Connection: "keep-alive",
+    "Content-Type": "text/event-stream",
+    "Cache-Control": "no-cache",
+  });
+
+  emitter.on(`subsOrderWorker`, (order) => {
+    res.write(`data: ${JSON.stringify(order)} \n\n`);
+  });
 };

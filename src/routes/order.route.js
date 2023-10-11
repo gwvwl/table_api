@@ -15,4 +15,10 @@ router
     asyncHandler(OrderController.deleteOrder)
   )
   .put(asyncHandler(validateToken), asyncHandler(OrderController.updateOrder));
+router
+  .route("/connect_order")
+  .get(
+    asyncHandler(validateToken),
+    asyncHandler(OrderController.connectOrderWorker)
+  );
 module.exports = router;
